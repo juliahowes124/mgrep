@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-//handles results
+/** The worker package computes and manages results */
 
 type Result struct {
 	Line    string //line of text where match was found
-	LineNum int    //line index
+	LineNum int    //line number where match was found
 	Path    string //file path where match was found
 }
 

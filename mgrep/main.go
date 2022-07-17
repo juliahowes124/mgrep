@@ -11,8 +11,7 @@ import (
 	"github.com/alexflint/go-arg"
 )
 
-//where all go routines and waitgroups are implemented
-
+//traverse directory and add files to worklist
 func discoverDirs(wl *worklist.Worklist, path string) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
@@ -35,17 +34,17 @@ var args struct {
 }
 
 func main() {
-	arg.MustParse(&args) //ensures arguments are valid
+	arg.MustParse(&args) //ensure arguments are valid
 
+	numWorkers := 10
 	var workersWg sync.WaitGroup
-	wl := worklist.New(100) //100 jobs before adding to channel is blocked
+	wl := worklist.New(100) //100 jobs before channel is blocked
 
 	results := make(chan worker.Result, 100)
 
-	numWorkers := 10
-
 	workersWg.Add(1)
 
+	//Build waitlist of files to process
 	go func() {
 		defer workersWg.Done()
 		discoverDirs(&wl, args.SearchDir)
@@ -57,11 +56,11 @@ func main() {
 		go func() {
 			defer workersWg.Done()
 			for {
-				workEntry := wl.Next()
+				workEntry := wl.Next() //grab next file in the worklist
 				if workEntry.Path != "" {
-					workerResult := worker.FindInFile(workEntry.Path, args.SearchTerm)
-					if workerResult != nil {
-						for _, r := range workerResult.Inner {
+					workerResults := worker.FindInFile(workEntry.Path, args.SearchTerm)
+					if workerResults != nil {
+						for _, r := range workerResults.Inner {
 							results <- r
 						}
 					}
@@ -72,8 +71,8 @@ func main() {
 		}()
 	}
 
-	//wait on workers to finish and display results
-	blockWorkersWg := make(chan struct{}) //will select on this channel
+	blockWorkersWg := make(chan struct{})
+	//since Wait() is blocking, call in a go routine so program can print results while waiting for jobs to finish
 	go func() {
 		workersWg.Wait()
 		close(blockWorkersWg)
@@ -81,6 +80,7 @@ func main() {
 
 	var displayWg sync.WaitGroup
 
+	//wait on workers to finish and display results
 	displayWg.Add(1)
 	go func() {
 		for {

@@ -1,6 +1,6 @@
 package worklist
 
-//keeps track of files to be processed
+/** The worklist package keeps track of files to be processed */
 
 //entry in the channel
 type Entry struct {
@@ -22,12 +22,12 @@ func (w *Worklist) Next() Entry {
 	return j
 }
 
-//generate a new worklist (buffered channel)
+//initialize a new worklist channel
 func New(bufSize int) Worklist {
 	return Worklist{make(chan Entry, bufSize)}
 }
 
-//create new job entry
+//initialize a new job entry
 func NewJob(path string) Entry {
 	return Entry{path}
 }
